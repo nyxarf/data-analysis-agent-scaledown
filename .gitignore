@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+
+# Output folders (plots, temp files, etc.)
+outputs/

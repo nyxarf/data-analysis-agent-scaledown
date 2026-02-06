@@ -10,5 +10,5 @@ class AnalysisMemory:
         self.insights.append(insight)
 
     def compress(self):
-        # Return a single list combining steps and insights
+        
         return self.steps_done + self.insights

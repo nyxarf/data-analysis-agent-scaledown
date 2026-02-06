@@ -1,4 +1,4 @@
-# agent/scaledown_client.py
+
 
 import os
 import requests
@@ -27,7 +27,7 @@ class ScaleDownClient:
         """
 
         if self.mode != "api":
-            # Mock mode
+            
             compressed = text[:max_tokens]
             return {
                 "compressed_text": compressed,
@@ -36,7 +36,7 @@ class ScaleDownClient:
                 "mode": "mock",
             }
 
-        # Real API attempt
+        
         try:
             response = requests.post(
                 "https://api.scaledown.ai/compress",
@@ -45,7 +45,7 @@ class ScaleDownClient:
                     "Content-Type": "application/json",
                 },
                 json={"text": text, "max_tokens": max_tokens},
-                timeout=10  # 10 seconds timeout
+                timeout=10  
             )
             response.raise_for_status()
             data = response.json()
@@ -58,7 +58,7 @@ class ScaleDownClient:
             }
 
         except Exception as e:
-            # Fallback to mock if anything goes wrong
+            
             print(f"[WARNING] ScaleDown API failed ({e}). Using mock compression instead.")
             compressed = text[:max_tokens]
             return {

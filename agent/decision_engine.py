@@ -1,8 +1,6 @@
 class DecisionEngine:
     def decide_next(self, schema, history):
         steps_done = set()
-
-        # Only look at the last 20 history entries
         for h in history[-20:]:
             if isinstance(h, str) and ":done" in h:
                 steps_done.add(h.split(":")[0])

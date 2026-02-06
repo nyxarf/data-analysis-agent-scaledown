@@ -86,7 +86,7 @@ data-analysis-agent-scaledown/
 └─ README.md
 ```
 
-Features
+**Features:**
 
 Automated data loading and cleaning
 

@@ -1,0 +1,554 @@
+
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Analysis Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    .upload-zone {
+      background: 
+        linear-gradient(90deg, var(--surface-color) 50%, transparent 50%),
+        linear-gradient(90deg, var(--surface-color) 50%, transparent 50%),
+        linear-gradient(0deg, var(--surface-color) 50%, transparent 50%),
+        linear-gradient(0deg, var(--surface-color) 50%, transparent 50%);
+      background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+      background-size: 20px 3px, 20px 3px, 3px 20px, 3px 20px;
+      background-position: 0 0, 100% 100%, 0 100%, 100% 0;
+      animation: border-dance 1s infinite linear;
+    }
+    
+    @keyframes border-dance {
+      0% { background-position: 0 0, 100% 100%, 0 100%, 100% 0; }
+      100% { background-position: 20px 0, calc(100% - 20px) 100%, 0 calc(100% - 20px), 100% 20px; }
+    }
+    
+    .upload-zone.drag-over {
+      transform: scale(1.02);
+      box-shadow: 0 20px 60px -15px rgba(99, 102, 241, 0.4);
+    }
+    
+    .pulse-ring {
+      animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+    }
+    
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+    
+    .float {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .result-container {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .result-container.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--primary-color);
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .file-info {
+      animation: slide-in 0.3s ease-out;
+    }
+    
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app-wrapper" class="min-h-full w-full overflow-auto" style="background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%);"><!-- Decorative background elements -->
+   <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 blur-3xl" style="background: var(--primary-color, #6366f1);"></div>
+    <div class="absolute bottom-20 right-10 w-96 h-96 rounded-full opacity-15 blur-3xl" style="background: var(--secondary-color, #8b5cf6);"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10 blur-3xl" style="background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--secondary-color, #8b5cf6));"></div>
+   </div>
+   <div class="relative z-10 max-w-5xl mx-auto px-6 py-12"><!-- Header -->
+    <header class="text-center mb-12">
+     <div class="inline-flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center float" style="background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--secondary-color, #8b5cf6));">
+       <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+       </svg>
+      </div>
+      <h1 id="app-title" class="text-4xl md:text-5xl font-bold gradient-text" style="font-family: 'Space Grotesk', sans-serif;">Data Analysis Agent</h1>
+     </div>
+     <p id="app-subtitle" class="text-lg md:text-xl opacity-70" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Upload your CSV file for instant visual insights</p>
+    </header><!-- Upload Section -->
+    <div class="glass-card rounded-3xl p-8 mb-8">
+     <div id="upload-zone" class="upload-zone relative rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 hover:scale-[1.01]" style="--surface-color: var(--primary-color, #6366f1); background-color: rgba(99, 102, 241, 0.1);"><input type="file" id="file-input" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+      <div id="upload-content" class="pointer-events-none">
+       <div class="pulse-ring inline-flex items-center justify-center w-20 h-20 rounded-full mb-6" style="background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--secondary-color, #8b5cf6));">
+        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+       </div>
+       <h3 id="upload-title" class="text-2xl font-semibold mb-2" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Drop your CSV file here</h3>
+       <p id="upload-hint" class="opacity-60" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">or click to browse</p>
+       <div class="flex items-center justify-center gap-2 mt-4 text-sm opacity-50" style="color: var(--text-color, #e2e8f0);">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg><span style="font-family: 'JetBrains Mono', monospace;">.csv files only</span>
+       </div>
+      </div><!-- Loading State -->
+      <div id="loading-state" class="hidden pointer-events-none">
+       <div class="spinner w-16 h-16 rounded-full mx-auto mb-6"></div>
+       <h3 class="text-2xl font-semibold mb-2" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Analyzing your data...</h3>
+       <p class="opacity-60" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">This may take a moment</p>
+      </div>
+     </div><!-- File Info (shown after upload) -->
+     <div id="file-info" class="hidden file-info mt-6 p-4 rounded-xl" style="background: rgba(99, 102, 241, 0.1);">
+      <div class="flex items-center justify-between">
+       <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-color, #6366f1);">
+         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+         </svg>
+        </div>
+        <div>
+         <p id="file-name" class="font-medium" style="color: var(--text-color, #e2e8f0); font-family: 'JetBrains Mono', monospace;">filename.csv</p>
+         <p id="file-size" class="text-sm opacity-60" style="color: var(--text-color, #e2e8f0);">0 KB</p>
+        </div>
+       </div><button id="clear-file" class="p-2 rounded-lg transition-colors hover:bg-white/10" style="color: var(--text-color, #e2e8f0);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg></button>
+      </div>
+     </div>
+    </div><!-- Process Button -->
+    <div id="process-section" class="hidden text-center mb-8"><button id="process-btn" class="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-lg text-white transition-all duration-300 hover:scale-105 hover:shadow-xl" style="background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--secondary-color, #8b5cf6)); font-family: 'Space Grotesk', sans-serif;">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg> Analyze &amp; Generate Visualization </button>
+    </div><!-- Results Section -->
+    <div id="results-section" class="result-container glass-card rounded-3xl p-8">
+     <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+       <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+       </div>
+
+       <h2 class="text-2xl font-semibold" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Analysis Result</h2>
+      </div><button id="download-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 hover:scale-105" style="background: var(--primary-color, #6366f1); color: white; font-family: 'Space Grotesk', sans-serif;">
+       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+       </svg> Download PNG </button>
+     </div><!-- Image Display Area -->
+     <div id="image-container" class="relative rounded-2xl overflow-hidden" style="background: rgba(0, 0, 0, 0.3);">
+      <div id="placeholder-content" class="flex flex-col items-center justify-center py-24 opacity-50">
+       <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewbox="0 0 24 24" style="color: var(--text-color, #e2e8f0);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+       </svg>
+       <p style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Your visualization will appear here</p>
+      </div><img id="result-image" class="hidden w-full h-auto" alt="Data analysis visualization" loading="lazy" onerror="console.error('Image failed to load:', this.src); this.style.background='#1a1a3e'; this.alt='Image unavailable';">
+     </div><!-- Stats Bar -->
+     <div id="stats-bar" class="hidden grid grid-cols-3 gap-4 mt-6">
+      <div class="p-4 rounded-xl text-center" style="background: rgba(99, 102, 241, 0.1);">
+       <p class="text-2xl font-bold gradient-text" id="stat-rows">-</p>
+       <p class="text-sm opacity-60" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Rows Processed</p>
+      </div>
+      <div class="p-4 rounded-xl text-center" style="background: rgba(99, 102, 241, 0.1);">
+       <p class="text-2xl font-bold gradient-text" id="stat-cols">-</p>
+       <p class="text-sm opacity-60" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Columns</p>
+      </div>
+      <div class="p-4 rounded-xl text-center" style="background: rgba(99, 102, 241, 0.1);">
+       <p class="text-2xl font-bold gradient-text" id="stat-time">-</p>
+       <p class="text-sm opacity-60" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Process Time</p>
+      </div>
+     </div>
+     <div id="insights-section" class="mt-6 text-left hidden glass-card p-4 rounded-2xl">
+        <h3 class="font-semibold mb-2">AI Insights:</h3>
+        <ul id="insights-list" class="list-disc ml-6 text-sm opacity-80" style="color: var(--text-color, #e2e8f0);"></ul>
+        </div>
+
+    </div><!-- Footer -->
+    <footer class="text-center mt-12 opacity-50">
+     <p class="text-sm" style="color: var(--text-color, #e2e8f0); font-family: 'Space Grotesk', sans-serif;">Powered by advanced data analysis • Supports CSV files up to 50MB</p>
+    </footer>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      primary_color: '#6366f1',
+      secondary_color: '#8b5cf6',
+      background_color: '#0f0f23',
+      text_color: '#e2e8f0',
+      surface_color: '#1a1a3e',
+      font_family: 'Space Grotesk',
+      font_size: 16,
+      app_title: 'Data Analysis Agent',
+      app_subtitle: 'Upload your CSV file for instant visual insights',
+      upload_title: 'Drop your CSV file here',
+      upload_hint: 'or click to browse'
+    };
+
+    let currentFile = null;
+    let resultImageData = null;
+
+    // Element references
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadContent = document.getElementById('upload-content');
+    const loadingState = document.getElementById('loading-state');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const clearFileBtn = document.getElementById('clear-file');
+    const processSection = document.getElementById('process-section');
+    const processBtn = document.getElementById('process-btn');
+    const resultsSection = document.getElementById('results-section');
+    const resultImage = document.getElementById('result-image');
+    const placeholderContent = document.getElementById('placeholder-content');
+    const downloadBtn = document.getElementById('download-btn');
+    const statsBar = document.getElementById('stats-bar');
+
+    // Drag and drop handlers
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('drag-over');
+    });
+
+    uploadZone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].name.endsWith('.csv')) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      currentFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatFileSize(file.size);
+      fileInfo.classList.remove('hidden');
+      processSection.classList.remove('hidden');
+      
+      // Reset results
+      resultsSection.classList.remove('visible');
+      resultImage.classList.add('hidden');
+      placeholderContent.classList.remove('hidden');
+      statsBar.classList.add('hidden');
+      resultImageData = null;
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    clearFileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentFile = null;
+      fileInput.value = '';
+      fileInfo.classList.add('hidden');
+      processSection.classList.add('hidden');
+      resultsSection.classList.remove('visible');
+      resultImage.classList.add('hidden');
+      placeholderContent.classList.remove('hidden');
+      statsBar.classList.add('hidden');
+      resultImageData = null;
+    });
+
+    processBtn.addEventListener('click', async () => {
+    if (!currentFile) return;
+
+    uploadContent.classList.add('hidden');
+    loadingState.classList.remove('hidden');
+    processBtn.disabled = true;
+    processBtn.style.opacity = '0.5';
+
+    const formData = new FormData();
+    formData.append('file', currentFile);
+
+    try {
+        const response = await fetch('/', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        const insightsSection = document.getElementById('insights-section');
+        const insightsList = document.getElementById('insights-list');
+        // Show results section with animation
+        resultsSection.classList.add('visible');
+        resultImage.src = data.png_path;
+        resultImage.classList.remove('hidden');
+        placeholderContent.classList.add('hidden');
+
+        // Populate insights list
+        insightsList.innerHTML = '';
+        if (data.insights && data.insights.length > 0) {
+        data.insights.forEach(insight => {
+            const li = document.createElement('li');
+            li.textContent = insight;
+            insightsList.appendChild(li);
+        });
+        insightsSection.classList.remove('hidden');
+    } else{insightsSection.classList.add('hidden');}
+
+        statsBar.classList.remove('hidden');
+        document.getElementById('stat-rows').textContent = '-';
+        document.getElementById('stat-cols').textContent = '-';
+        document.getElementById('stat-time').textContent = '-';
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to process the file.");
+    } finally {
+        uploadContent.classList.remove('hidden');
+        loadingState.classList.add('hidden');
+        processBtn.disabled = false;
+        processBtn.style.opacity = '1';
+    }
+});
+
+
+    function showSampleVisualization() {
+      // Create a sample SVG visualization as placeholder
+      // In production, you would set resultImage.src to the PNG from your backend
+      const sampleSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" style="background: #1a1a3e;">
+          <defs>
+            <linearGradient id="barGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#6366f1"/>
+              <stop offset="100%" style="stop-color:#8b5cf6"/>
+            </linearGradient>
+            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#10b981"/>
+              <stop offset="100%" style="stop-color:#34d399"/>
+            </linearGradient>
+          </defs>
+          
+          <!-- Grid lines -->
+          <g stroke="#ffffff" stroke-opacity="0.1" stroke-width="1">
+            <line x1="80" y1="50" x2="80" y2="350"/>
+            <line x1="80" y1="350" x2="750" y2="350"/>
+            <line x1="80" y1="275" x2="750" y2="275" stroke-dasharray="5,5"/>
+            <line x1="80" y1="200" x2="750" y2="200" stroke-dasharray="5,5"/>
+            <line x1="80" y1="125" x2="750" y2="125" stroke-dasharray="5,5"/>
+          </g>
+          
+          <!-- Y-axis labels -->
+          <g fill="#e2e8f0" font-family="Space Grotesk, sans-serif" font-size="12" opacity="0.6">
+            <text x="70" y="55" text-anchor="end">100</text>
+            <text x="70" y="130" text-anchor="end">75</text>
+            <text x="70" y="205" text-anchor="end">50</text>
+            <text x="70" y="280" text-anchor="end">25</text>
+            <text x="70" y="355" text-anchor="end">0</text>
+          </g>
+          
+          <!-- Bars -->
+          <g fill="url(#barGrad)">
+            <rect x="120" y="170" width="60" height="180" rx="4" opacity="0.9"/>
+            <rect x="220" y="120" width="60" height="230" rx="4" opacity="0.9"/>
+            <rect x="320" y="200" width="60" height="150" rx="4" opacity="0.9"/>
+            <rect x="420" y="90" width="60" height="260" rx="4" opacity="0.9"/>
+            <rect x="520" y="150" width="60" height="200" rx="4" opacity="0.9"/>
+            <rect x="620" y="100" width="60" height="250" rx="4" opacity="0.9"/>
+          </g>
+          
+          <!-- Line chart overlay -->
+          <polyline 
+            points="150,160 250,110 350,190 450,80 550,140 650,90" 
+            fill="none" 
+            stroke="url(#lineGrad)" 
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          
+          <!-- Data points -->
+          <g fill="#10b981">
+            <circle cx="150" cy="160" r="6"/>
+            <circle cx="250" cy="110" r="6"/>
+            <circle cx="350" cy="190" r="6"/>
+            <circle cx="450" cy="80" r="6"/>
+            <circle cx="550" cy="140" r="6"/>
+            <circle cx="650" cy="90" r="6"/>
+          </g>
+          
+          <!-- X-axis labels -->
+          <g fill="#e2e8f0" font-family="Space Grotesk, sans-serif" font-size="12" opacity="0.6" text-anchor="middle">
+            <text x="150" y="375">Jan</text>
+            <text x="250" y="375">Feb</text>
+            <text x="350" y="375">Mar</text>
+            <text x="450" y="375">Apr</text>
+            <text x="550" y="375">May</text>
+            <text x="650" y="375">Jun</text>
+          </g>
+          
+          <!-- Title -->
+          <text x="400" y="30" fill="#e2e8f0" font-family="Space Grotesk, sans-serif" font-size="16" font-weight="600" text-anchor="middle">
+            Data Analysis Results - ${currentFile ? currentFile.name : 'Sample Data'}
+          </text>
+        </svg>
+      `;
+      
+      // Convert SVG to data URL for display
+      const svgBlob = new Blob([sampleSvg], { type: 'image/svg+xml' });
+      resultImageData = URL.createObjectURL(svgBlob);
+      
+      resultImage.src = resultImageData;
+      resultImage.classList.remove('hidden');
+      placeholderContent.classList.add('hidden');
+      
+      // Show stats
+      statsBar.classList.remove('hidden');
+      document.getElementById('stat-rows').textContent = Math.floor(Math.random() * 10000 + 1000).toLocaleString();
+      document.getElementById('stat-cols').textContent = Math.floor(Math.random() * 20 + 5);
+      document.getElementById('stat-time').textContent = (Math.random() * 2 + 0.5).toFixed(2) + 's';
+    }
+
+    // Download functionality
+    downloadBtn.addEventListener('click', () => {
+      if (resultImageData) {
+        const link = document.createElement('a');
+        link.href = resultImageData;
+        link.download = `analysis_${currentFile ? currentFile.name.replace('.csv', '') : 'result'}.png`;
+        link.click();
+      }
+    });
+
+    // SDK Integration
+    async function onConfigChange(config) {
+      const c = { ...defaultConfig, ...config };
+      
+      // Update CSS variables
+      document.documentElement.style.setProperty('--primary-color', c.primary_color);
+      document.documentElement.style.setProperty('--secondary-color', c.secondary_color);
+      document.documentElement.style.setProperty('--background-color', c.background_color);
+      document.documentElement.style.setProperty('--text-color', c.text_color);
+      document.documentElement.style.setProperty('--surface-color', c.surface_color);
+      
+      // Update font
+      const fontStack = `${c.font_family}, sans-serif`;
+      document.querySelectorAll('[style*="font-family"]').forEach(el => {
+        if (!el.style.fontFamily.includes('JetBrains')) {
+          el.style.fontFamily = fontStack;
+        }
+      });
+      
+      // Update font sizes
+      const baseSize = c.font_size;
+      document.getElementById('app-title').style.fontSize = `${baseSize * 2.5}px`;
+      document.getElementById('app-subtitle').style.fontSize = `${baseSize * 1.125}px`;
+      
+      // Update text content
+      document.getElementById('app-title').textContent = c.app_title;
+      document.getElementById('app-subtitle').textContent = c.app_subtitle;
+      document.getElementById('upload-title').textContent = c.upload_title;
+      document.getElementById('upload-hint').textContent = c.upload_hint;
+    }
+
+    function mapToCapabilities(config) {
+      const c = { ...defaultConfig, ...config };
+      return {
+        recolorables: [
+          {
+            get: () => c.background_color,
+            set: (v) => { c.background_color = v; window.elementSdk.setConfig({ background_color: v }); }
+          },
+          {
+            get: () => c.surface_color,
+            set: (v) => { c.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }
+          },
+          {
+            get: () => c.text_color,
+            set: (v) => { c.text_color = v; window.elementSdk.setConfig({ text_color: v }); }
+          },
+          {
+            get: () => c.primary_color,
+            set: (v) => { c.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); }
+          },
+          {
+            get: () => c.secondary_color,
+            set: (v) => { c.secondary_color = v; window.elementSdk.setConfig({ secondary_color: v }); }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => c.font_family,
+          set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+        },
+        fontSizeable: {
+          get: () => c.font_size,
+          set: (v) => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      const c = { ...defaultConfig, ...config };
+      return new Map([
+        ['app_title', c.app_title],
+        ['app_subtitle', c.app_subtitle],
+        ['upload_title', c.upload_title],
+        ['upload_hint', c.upload_hint]
+      ]);
+    }
+
+    // Initialize SDK
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    } else {
+      onConfigChange(defaultConfig);
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c981a9065395649',t:'MTc3MDM1NDIzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

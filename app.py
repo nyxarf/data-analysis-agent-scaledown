@@ -1,13 +1,16 @@
 from flask import Flask, render_template, request, redirect
 from agent.analysis_memory import AnalysisMemory
 import os
+os.environ["MPLCONFIGDIR"] = "/tmp"
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
 import uuid
 from dotenv import load_dotenv
 import requests
 import json
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 load_dotenv()
 
@@ -18,7 +21,7 @@ SCALEDOWN_MODE = os.getenv("SCALEDOWN_MODE", "mock")  # "api" or "mock"
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['OUTPUT_FOLDER'] = 'static/outputs'
+app.config['OUTPUT_FOLDER'] = 'tmp/outputs'
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
@@ -37,8 +40,9 @@ def index():
 
             # Save uploaded file
             file_id = str(uuid.uuid4())
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file_id + ".csv")
+            filepath = os.path.join("/tmp", file.filename)
             file.save(filepath)
+
 
             # Load dataset
             df = pd.read_csv(filepath)
@@ -97,10 +101,16 @@ def index():
             insights = get_scaledown_insights(df)
             memory.add("scaledown_insights", "\n".join(insights))
 
-            return {'png_path': '/' + output_file.replace("\\", "/"),
+            return {'png_path': f"/plot/{file_id}.png",
                     'insights': insights}
 
     return render_template('index.html')
+from flask import send_file
+
+@app.route("/plot/<filename>")
+def serve_plot(filename):
+    path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+    return send_file(path, mimetype='image/png')
 
 def get_scaledown_insights(df: pd.DataFrame):
     """

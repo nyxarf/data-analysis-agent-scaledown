@@ -14,6 +14,8 @@ load_dotenv()
 SCALEDOWN_API_KEY = os.getenv("SCALEDOWN_API_KEY")
 SCALEDOWN_MODE = os.getenv("SCALEDOWN_MODE", "mock")  # "api" or "mock"
 
+
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['OUTPUT_FOLDER'] = 'static/outputs'

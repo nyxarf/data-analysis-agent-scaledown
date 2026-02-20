@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Data Analysis Agent</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  
+  <script src="/_sdk/element_sdk.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
@@ -61,7 +61,6 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      color: transparent;
     }
     
     .glass-card {
@@ -101,7 +100,7 @@
     }
   </style>
   <style>@view-transition { navigation: auto; }</style>
-  
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full">
   <div id="app-wrapper" class="min-h-full w-full overflow-auto" style="background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%);"><!-- Decorative background elements -->
@@ -461,7 +460,83 @@
       }
     });
 
-  
+    // SDK Integration
+    async function onConfigChange(config) {
+      const c = { ...defaultConfig, ...config };
+      
+      // Update CSS variables
+      document.documentElement.style.setProperty('--primary-color', c.primary_color);
+      document.documentElement.style.setProperty('--secondary-color', c.secondary_color);
+      document.documentElement.style.setProperty('--background-color', c.background_color);
+      document.documentElement.style.setProperty('--text-color', c.text_color);
+      document.documentElement.style.setProperty('--surface-color', c.surface_color);
+      
+      // Update font
+      const fontStack = `${c.font_family}, sans-serif`;
+      document.querySelectorAll('[style*="font-family"]').forEach(el => {
+        if (!el.style.fontFamily.includes('JetBrains')) {
+          el.style.fontFamily = fontStack;
+        }
+      });
+      
+      // Update font sizes
+      const baseSize = c.font_size;
+      document.getElementById('app-title').style.fontSize = `${baseSize * 2.5}px`;
+      document.getElementById('app-subtitle').style.fontSize = `${baseSize * 1.125}px`;
+      
+      // Update text content
+      document.getElementById('app-title').textContent = c.app_title;
+      document.getElementById('app-subtitle').textContent = c.app_subtitle;
+      document.getElementById('upload-title').textContent = c.upload_title;
+      document.getElementById('upload-hint').textContent = c.upload_hint;
+    }
+
+    function mapToCapabilities(config) {
+      const c = { ...defaultConfig, ...config };
+      return {
+        recolorables: [
+          {
+            get: () => c.background_color,
+            set: (v) => { c.background_color = v; window.elementSdk.setConfig({ background_color: v }); }
+          },
+          {
+            get: () => c.surface_color,
+            set: (v) => { c.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }
+          },
+          {
+            get: () => c.text_color,
+            set: (v) => { c.text_color = v; window.elementSdk.setConfig({ text_color: v }); }
+          },
+          {
+            get: () => c.primary_color,
+            set: (v) => { c.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); }
+          },
+          {
+            get: () => c.secondary_color,
+            set: (v) => { c.secondary_color = v; window.elementSdk.setConfig({ secondary_color: v }); }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => c.font_family,
+          set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+        },
+        fontSizeable: {
+          get: () => c.font_size,
+          set: (v) => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      const c = { ...defaultConfig, ...config };
+      return new Map([
+        ['app_title', c.app_title],
+        ['app_subtitle', c.app_subtitle],
+        ['upload_title', c.upload_title],
+        ['upload_hint', c.upload_hint]
+      ]);
+    }
 
     // Initialize SDK
     if (window.elementSdk) {
@@ -475,5 +550,5 @@
       onConfigChange(defaultConfig);
     }
   </script>
- </body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c981a9065395649',t:'MTc3MDM1NDIzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -25,3 +25,35 @@ This project is an **AI-powered automated data analysis agent** that performs ED
 ```bash
 git clone <your-repo-url>
 cd data-analysis-agent-scaledown
+
+
+2. **Create a virtual environment:**
+
+```bash
+python -m venv venv
+# Linux / Mac
+source venv/bin/activate
+# Windows
+venv\Scripts\activate
+pip install -r requirements.txt
+
+3. **Configure environment variables**
+ Create a file called .env in the project root:
+```env
+SCALEDOWN_API_KEY=YOUR_API_KEY_HERE
+SCALEDOWN_MODE=mock  # use 'api' to try real API
+
+
+Run with python main.py
+
+Outputs
+
+Correlation heatmap saved in outputs/plots/correlation.png
+
+Console logs show:
+
+Step history
+
+Insights
+
+Compression mode used (mock or api)

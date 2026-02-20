@@ -2,6 +2,10 @@
 
 This project is an **AI-powered automated data analysis agent** that performs EDA (Exploratory Data Analysis) on a dataset, including cleaning, analysis, and insight generation. It integrates with the **ScaleDown API** for schema compression, with a **mock fallback** for offline or restricted environments.
 
+ Live Demo: 
+
+[Click here to use the Data Analysis Agent](https://data-analysis-agent-sd.onrender.com)
+
 ---
 
 ## Features
